@@ -221,7 +221,6 @@ public int CallAirDrop(float vBoxOrigin[3], bool bCallForward)
 		
 		
 		ArrayList DataArray = new ArrayList(3);
-		PrintToChatAll("%1.f", vBoxOrigin[0]);
 		TE_SetupBeamPoints(vBoxOrigin, vEndPoint, iBeamSprite, iHaloSprite, 0, 30, 0.1, 5.0, 5.0, 2, 5.0, iColors, 0);
 		TE_SendToAll();
 		
