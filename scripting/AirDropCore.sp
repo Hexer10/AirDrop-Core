@@ -220,13 +220,22 @@ public int CallAirDrop(float vBoxOrigin[3], bool bCallForward)
 		}
 		
 		
-		ArrayList DataArray = new ArrayList(3);
-		TE_SetupBeamPoints(vBoxOrigin, vEndPoint, iBeamSprite, iHaloSprite, 0, 30, 0.1, 5.0, 5.0, 2, 5.0, iColors, 0);
+		ArrayList DataArray = new ArrayList(4);
+		TE_SetupBeamPoints(vBoxOrigin, vEndPoint, iBeamSprite, iHaloSprite, 0, 100, 0.1, 1.0, 5.0, 1, 5.0, iColors, 1);
 		TE_SendToAll();
 		
-		DataArray.PushArray(vBoxOrigin);
-		DataArray.PushArray(vEndPoint);
+		TE_SetupBeamRingPoint(vBoxOrigin, cv_fLandDistance.FloatValue + 200.0, cv_fLandDistance.FloatValue + 200.1, iBeamSprite, iHaloSprite, 0, 30, 0.1, 1.0, 1.0, iColors, 1, 0);
+		TE_SendToAll();
+		
+		vEndPoint[2] += 5.0;
+		TE_SetupBeamRingPoint(vEndPoint, cv_fLandDistance.FloatValue + 25.0, cv_fLandDistance.FloatValue + 25.1, iBeamSprite, iHaloSprite, 0, 30, 0.1, 1.0, 1.0, iColors, 1, 0);
+		TE_SendToAll();
+		vEndPoint[2] -= 5.0;
+		
+		DataArray.Push(vBoxOrigin[2]);
+		DataArray.Push(vEndPoint[2]);
 		DataArray.PushArray(iColors);
+		DataArray.Push(EntIndexToEntRef(iBoxEnt));
 		
 		BeamTimer = CreateTimer(0.1, Timer_DrawBeam, DataArray, TIMER_REPEAT);
 	}
@@ -251,18 +260,7 @@ public bool TraceRayDontHitSelf(int entity, int mask, any data)
 	return true;
 }
 
-public Action Timer_DrawBeam(Handle timer, ArrayList DataArray)
-{
-	float vBoxOrigin[3];
-	float vEndPoint[3];
-	int iColors[4];
-	DataArray.GetArray(0, vBoxOrigin);
-	DataArray.GetArray(1, vEndPoint);
-	DataArray.GetArray(2, iColors);
-	
-	TE_SetupBeamPoints(vBoxOrigin, vEndPoint, iBeamSprite, iHaloSprite, 0, 30, 0.1, 5.0, 5.0, 2, 5.0, iColors, 0);
-	TE_SendToAll();
-}
+
 
 public void OnReqFrame(ArrayList DataArray)
 {
@@ -398,6 +396,66 @@ void CheckDistance()
 		}
 	}
 }
+
+/***************************	TIMERS 	**********************************/
+
+
+public Action Timer_DrawBeam(Handle timer, ArrayList DataArray)
+{
+	int iColors[4];
+	float pBoxStart = DataArray.Get(0);
+	float pBoxEnd = DataArray.Get(1);
+	int iEnt = EntRefToEntIndex(DataArray.Get(3));
+	DataArray.GetArray(2, iColors);
+	
+	if (iEnt == INVALID_ENT_REFERENCE)
+	{
+		timer = null;
+		return Plugin_Stop;
+	}
+	float vBoxStart[3];
+	float vBoxEnd[3];
+	
+	GetEntityOrigin(iEnt, vBoxStart);
+	GetEntityOrigin(iEnt, vBoxEnd);
+	
+	vBoxStart[2] = pBoxStart;
+	vBoxEnd[2] = pBoxEnd;
+	
+	
+	TE_SetupBeamPoints(vBoxStart, vBoxEnd, iBeamSprite, iHaloSprite, 0, 100, 0.1, 5.0, 5.0, 1, 5.0, iColors, 1);
+	TE_SendToAll();
+	
+	TE_SetupBeamRingPoint(vBoxStart, cv_fLandDistance.FloatValue + 200, cv_fLandDistance.FloatValue + 200.1, iBeamSprite, iHaloSprite, 0, 30, 0.1, 1.0, 1.0, iColors, 1, 0);
+	TE_SendToAll();
+	
+	vBoxEnd[2] += 5.0;
+	TE_SetupBeamRingPoint(vBoxEnd, cv_fLandDistance.FloatValue + 25.0, cv_fLandDistance.FloatValue + 25.1, iBeamSprite, iHaloSprite, 0, 30, 0.1, 1.0, 1.0, iColors, 1, 0);
+	TE_SendToAll();
+	vBoxEnd[2] -= 5.0;
+	return Plugin_Continue;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /***************************	STOCKS 	**********************************/
 int SpawnBox(float pos[3])
