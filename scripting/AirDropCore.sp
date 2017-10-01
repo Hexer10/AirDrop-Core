@@ -12,16 +12,22 @@ ConVar cv_sBoxPath;
 ConVar cv_sParaPath;
 ConVar cv_fMaxDistance;
 ConVar cv_fLandDistance;
-
+ConVar cv_sLandBeam;
+ConVar cv_bCheckSolid;
 
 ArrayList Array_BoxEnt;
 ArrayList Array_BoxRunningEnt;
 ArrayList Array_BoxRunningEntZ;
+
 Handle gF_OnAirDropCalled;
 Handle gF_OnBoxUsed;
 
+int iBeamSprite;
+int iHaloSprite;
+
 char sBoxPath[PLATFORM_MAX_PATH];
 char sParaPath[PLATFORM_MAX_PATH];
+char sLandBeam[64];
 
 
 #define PLUGIN_AUTHOR "Hexah"
@@ -45,7 +51,6 @@ public void OnPluginStart()
 	Array_BoxEnt = new ArrayList(64);
 	Array_BoxRunningEnt = new ArrayList(64);
 	Array_BoxRunningEntZ = new ArrayList(64);
-	
 	//HookEvents
 	HookEvent("round_start", Event_RoundStart);
 	
@@ -56,17 +61,18 @@ public void OnPluginStart()
 	cv_sParaPath = CreateConVar("sm_airdrop_parachute", "models/parachute/parachute_ark.mdl", "Path of the paracute in the airdrop");
 	cv_fMaxDistance = CreateConVar("sm_airdrop_max_distance", "350.0", "The max distance that a box can be pressed", _, true, 0.0);
 	cv_fLandDistance = CreateConVar("sm_airdrop_landing_zone", "75.0", "N - Prevent player going into the Box Landing Zone to avoid them to compenetrait when the box. 0 - Disable", _, true, 0.0);
+	cv_sLandBeam = CreateConVar("sm_airdrop_landing_beam", "1", "1 - Make a random colored beam in the landind zone. 0 - Disabled. R,G,B - Colors (Es: 255, 0, 255)");
+	cv_bCheckSolid = CreateConVar("sm_airdrop_check_solid", "1", "1 - If a box is going to compenerate with the floor stop it. 0 - Allow the box to go thru the floor");
 	
 	//Get CvarString Values
 	cv_sBoxPath.GetString(sBoxPath, sizeof(sBoxPath));
 	cv_sParaPath.GetString(sParaPath, sizeof(sParaPath));
+	cv_sLandBeam.GetString(sLandBeam, sizeof(sLandBeam));
 	
 	//AddChangeHook for Cvars
 	cv_sBoxPath.AddChangeHook(OnCvarChange);
 	cv_sParaPath.AddChangeHook(OnCvarChange);
-	
-	
-	
+	cv_sLandBeam.AddChangeHook(OnCvarChange);
 }
 
 public void OnCvarChange(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -79,17 +85,23 @@ public void OnCvarChange(ConVar convar, const char[] oldValue, const char[] newV
 	}
 	else if (convar == cv_sParaPath)
 	{
-		strcopy(sParaPath, sizeof(sBoxPath), newValue);
+		strcopy(sParaPath, sizeof(sParaPath), newValue);
 		if (IsModelPrecached(sParaPath))
 			PrecacheModel(sParaPath);
+	}
+	else if (convar == cv_sLandBeam)
+	{
+		strcopy(sLandBeam, sizeof(sLandBeam), newValue);
 	}
 }
 
 public void OnMapStart()
 {
 	PrecacheModel(sBoxPath);
-	
 	PrecacheModel(sParaPath);
+	
+	iBeamSprite = PrecacheModel("sprites/laserbeam.vmt");
+	iHaloSprite = PrecacheModel("materials/sprites/halo.vmt");
 }
 
 /***************************	EVENTS	**********************************/
@@ -129,7 +141,8 @@ public int CallAirDrop(float vBoxOrigin[3], bool bCallForward)
 		return -1;
 	}
 	
-	float pEndPoint = vBoxOrigin[2];
+	float pEndPoint[3];
+	pEndPoint[2] = vBoxOrigin[2];
 	
 	vBoxOrigin[2] += 3000.0;
 	
@@ -162,18 +175,101 @@ public int CallAirDrop(float vBoxOrigin[3], bool bCallForward)
 		}
 	}
 	
+	if (cv_bCheckSolid.BoolValue)
+	{
+		float vAng[3];
+		
+		vAng[0] = 89.0;
+		vAng[1] = 0.0;
+		vAng[2] = 0.0;
+		
+		
+		TR_TraceRayFilter(vBoxOrigin, vAng, MASK_SOLID, RayType_Infinite, TraceRayDontHitSelf, iBoxEnt);
+		TR_GetEndPosition(pEndPoint);
+	}
 	
-	ArrayList DataArray = new ArrayList(3);
+	Handle BeamTimer = null;
+	if (!StrEqual(sLandBeam, "0"))
+	{
+		float vEndPoint[3];
+		int iColors[4];
+		
+		vEndPoint[0] = vBoxOrigin[0];
+		vEndPoint[1] = vBoxOrigin[1];
+		vEndPoint[2] = pEndPoint[2];
+		
+		iColors[3] = 255;
+		
+		if (StrEqual(sLandBeam, "1"))
+		{
+			for (int i = 0; i <= 2; i++)
+			{
+				iColors[i] = GetRandomInt(0, 255);
+			}
+		}
+		else
+		{
+			char sColorsL[3][16];
+			
+			ExplodeString(sLandBeam, ",", sColorsL, sizeof(sColorsL[]), sizeof(sColorsL));
+			
+			for (int i = 0; i <= 2; i++)
+			{
+				iColors[i] = StringToInt(sLandBeam[i]);
+			}
+		}
+		
+		iColors[0] = 255;
+		iColors[1] = 10;
+		iColors[2] = 100;
+		iColors[3] = 255;
+		
+		
+		
+		
+		ArrayList DataArray = new ArrayList(3);
+		PrintToChatAll("%1.f", vBoxOrigin[0]);
+		TE_SetupBeamPoints(vBoxOrigin, vEndPoint, iBeamSprite, iHaloSprite, 0, 30, 0.1, 5.0, 5.0, 2, 5.0, iColors, 0);
+		TE_SendToAll();
+		
+		DataArray.PushArray(vBoxOrigin);
+		DataArray.PushArray(vEndPoint);
+		DataArray.PushArray(iColors);
+		
+		BeamTimer = CreateTimer(0.1, Timer_DrawBeam, DataArray, TIMER_REPEAT);
+	}
 	
-	//	pEndPoint = MakeEnd(vBoxOrigin);
+	ArrayList DataArray = new ArrayList(4);
+	
 	DataArray.Push(EntIndexToEntRef(iBoxEnt));
 	DataArray.Push(EntIndexToEntRef(iParaEnt));
-	DataArray.Push(pEndPoint);
+	DataArray.Push(pEndPoint[2]);
+	DataArray.Push(BeamTimer);
 	
 	Array_BoxRunningEnt.Push(EntIndexToEntRef(iBoxEnt));
-	Array_BoxRunningEntZ.Push(pEndPoint);
+	Array_BoxRunningEntZ.Push(pEndPoint[2]);
 	RequestFrame(OnReqFrame, DataArray);
 	return iBoxEnt;
+}
+
+public bool TraceRayDontHitSelf(int entity, int mask, any data)
+{
+	if (entity == data)
+		return false;
+	return true;
+}
+
+public Action Timer_DrawBeam(Handle timer, ArrayList DataArray)
+{
+	float vBoxOrigin[3];
+	float vEndPoint[3];
+	int iColors[4];
+	DataArray.GetArray(0, vBoxOrigin);
+	DataArray.GetArray(1, vEndPoint);
+	DataArray.GetArray(2, iColors);
+	
+	TE_SetupBeamPoints(vBoxOrigin, vEndPoint, iBeamSprite, iHaloSprite, 0, 30, 0.1, 5.0, 5.0, 2, 5.0, iColors, 0);
+	TE_SendToAll();
 }
 
 public void OnReqFrame(ArrayList DataArray)
@@ -181,6 +277,7 @@ public void OnReqFrame(ArrayList DataArray)
 	int iBoxEnt = EntRefToEntIndex(DataArray.Get(0));
 	int iParaEnt = EntRefToEntIndex(DataArray.Get(1));
 	float pEndPoint = view_as<float>(DataArray.Get(2));
+	Handle BeamTimer = DataArray.Get(3);
 	
 	if (iBoxEnt == INVALID_ENT_REFERENCE || iParaEnt == INVALID_ENT_REFERENCE)
 		return;
@@ -190,6 +287,11 @@ public void OnReqFrame(ArrayList DataArray)
 	
 	if (pEndPoint >= vPos[2])
 	{
+		if (BeamTimer != null)
+		{
+			BeamTimer.Close();
+			BeamTimer = null;
+		}
 		int iIndex = Array_BoxRunningEnt.FindValue(DataArray.Get(0));
 		Array_BoxRunningEnt.Erase(iIndex);
 		Array_BoxRunningEntZ.Erase(iIndex);
@@ -346,20 +448,4 @@ void KnockbackSetVelocity(int client, const float startpoint[3], const float end
 	
 	
 	TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, vector);
-}
-
-
-/*float MakeEnd(float point, float pos[3])
-{
-	float vAngles[3];
-	vAngles[0] = 90.0;
-	vAngles[1] = 0.0;
-	vAngles[2] = 0.0;
-	
-	TR_TraceRay(pos, vAngles, MASK_ALL, RayType_Infinite);
-	
-	float vPos[3];
-	TR_GetEndPosition(vPos);
-	
-	return vPos[2];
-} */
+} 
