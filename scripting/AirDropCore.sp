@@ -219,13 +219,6 @@ public int CallAirDrop(float vBoxOrigin[3], bool bCallForward)
 			}
 		}
 		
-		iColors[0] = 255;
-		iColors[1] = 10;
-		iColors[2] = 100;
-		iColors[3] = 255;
-		
-		
-		
 		
 		ArrayList DataArray = new ArrayList(3);
 		PrintToChatAll("%1.f", vBoxOrigin[0]);
