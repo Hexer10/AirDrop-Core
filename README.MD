@@ -21,8 +21,8 @@ Get more parachute models [here](https://gamebanana.com/skins/cats/11622)
 1. Add Native: `AirDrop_CallEx` To get the Parachute EntIndex too.
 2. You suggestions!
 
-##ScreenShots
-Coming Soon!
+## Video
+https://youtu.be/TRA6cmHYjw4
 
 # Develepers Infos
 
