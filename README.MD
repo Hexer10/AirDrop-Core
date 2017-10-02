@@ -3,10 +3,15 @@ A simple API to "call" an airdrop easly
 
 ## ConVars
 `sm_airdrop_box` Default Value: `models/props_crates/static_crate_40.mdl` Desc: `CVar to set the model of the box in the AirDrop`
+
 `sm_airdrop_parachute` Default Value: `models/parachute/parachute_ark.mdl` Desc: `Cvar to set the model of the parachute in the AirDrop`
+
 `sm_airdrop_max_distance` Default Value: `350.0` Desc: `Max distance that a Box can be pressed`
+
 `sm_airdrop_landing_zone` Default Value: `70.0` Desc: `Landing zone radius in which the player can't enter while the box in falling( To avoid the player compenetrates with the Box - 0.0 To disable)`
+
 `sm_airdrop_landing_beam` Default Value: `1` Desc: `Make a beam from where the AirDrop is coming`
+
 `sm_airdrop_check_solid` Default Value: `1` Desc: `Check if the AirDrop was called underground (of with a place where is a ceiling), and try to spawn above it`
 
 ## Infos
