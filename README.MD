@@ -1,4 +1,4 @@
-## AirDrop - Core
+# AirDrop - Core
 A simple API to "call" an airdrop easly
 
 ## ConVars
