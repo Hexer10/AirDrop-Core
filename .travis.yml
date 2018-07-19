@@ -1,0 +1,23 @@
+addons:
+  apt:
+    packages:
+    - lib32z1
+    - lib32stdc++6
+language: c
+sudo: false
+script:
+- if [[ $TRAVIS_PULL_REQUEST != "false" ]]; then bash ci/test.sh; fi
+- if [[ $TRAVIS_PULL_REQUEST == "false" ]]; then bash ci/build.sh $TRAVIS_TAG; fi
+
+notifications:
+  email: false
+  
+
+deploy:
+  provider: releases
+  api_key:
+    secure: r0Jac+0NWOAg56HOUF1t6PPPTTWXBvAHVwdMjXgaoPNnkDo53f94IzXMFzao/51PkpM58jrCBr5YNAfZlNtrOiDB2BolJL9m7rd7zyjbETvpBVk3yT3ts56UJBk/uW0t1tLQDSwNgY17KFxx4zfW3a4LjJbYIIXFXFo81jRbNbUqAm08h6Z9nG/Cne8qZ/dnD93LAW79MU7RvVFvhw7jBwrj63Bd8CYgYnKiaJujyiut6wfgnlsmFpMxjRpeqPdS8C5faWnSXPwKPTPYq9zFnkD8p27vEt616VTjmPQrkVKlMUsyNdGEukP+1wcDFDpwLxF8OWUCcE7HTERis6A9ZBSDRB3mvFhh6aiszLOKfUWyAiwFqHYKn+xe6s3TFQEA1qzDmDjnc9saLWYVwtl64izTnJi0K+gv4jEKXO3y+U3ykxoLcRt7qqGZdmfyfs9U+UqQyIBGVUE708Xok8H5f84aTghJ+9/tt7L6EW2BZ4UAkqmtWbXYG4FJlEQ5MOhEe2t1Brm70NaZ8l8SGxFGntq/Q8PA84ggWs+Kf3hqOqoBCXvhfs0pGjQf0wneqUyHoFW13wOB5f78P0YW8QUZACj2JA5NRxOiOORbJddeO21gYhYGpcAqMCE+zQiyDLvezerDtMuQcCjbJj0K2Ja/0xsL6znYnuj0JEjnggrlouY=
+  file: airdrop.zip
+  skip_cleanup: true
+  on:
+    repo: Hexer10/AirDrop-Core

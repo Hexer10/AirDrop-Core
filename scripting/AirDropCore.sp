@@ -14,6 +14,7 @@ ConVar cv_fMaxDistance;
 ConVar cv_fLandDistance;
 ConVar cv_sLandBeam;
 ConVar cv_bCheckSolid;
+ConVar cv_fSpeedMult;
 
 ArrayList Array_BoxEnt;
 ArrayList Array_BoxRunningEnt;
@@ -31,7 +32,7 @@ char sLandBeam[64];
 
 
 #define PLUGIN_AUTHOR "Hexah"
-#define PLUGIN_VERSION "1.00"
+#define PLUGIN_VERSION "<TAG>"
 
 public Plugin myinfo = 
 {
@@ -39,7 +40,7 @@ public Plugin myinfo =
 	author = PLUGIN_AUTHOR, 
 	description = "API For developers to call AirDrops", 
 	version = PLUGIN_VERSION, 
-	url = "csitajb.it"
+	url = "github.com/Hexer10/AirDrop-Core"
 };
 
 /***************************	STARTUP	**********************************/
@@ -63,6 +64,7 @@ public void OnPluginStart()
 	cv_fLandDistance = CreateConVar("sm_airdrop_landing_zone", "75.0", "N - Prevent player going into the Box Landing Zone to avoid them to compenetrait when the box. 0 - Disable", _, true, 0.0);
 	cv_sLandBeam = CreateConVar("sm_airdrop_landing_beam", "1", "1 - Make a random colored beam in the landind zone. 0 - Disabled. R,G,B - Colors (Es: 255, 0, 255)");
 	cv_bCheckSolid = CreateConVar("sm_airdrop_check_solid", "1", "1 - If a box is going to compenerate with the floor stop it. 0 - Allow the box to go thru the floor");
+	cv_fSpeedMult = CreateConVar("sm_airdrop_speed_mul", "1", "AirDrop fall speed multiplier");
 	
 	//Get CvarString Values
 	cv_sBoxPath.GetString(sBoxPath, sizeof(sBoxPath));
@@ -146,6 +148,7 @@ public int CallAirDrop(float vBoxOrigin[3], bool bCallForward)
 	
 	vBoxOrigin[2] += 3000.0;
 	
+	//This needs to be check it's useless atm
 	while (TR_PointOutsideWorld(vBoxOrigin))
 	{
 		vBoxOrigin[2] -= 5.0;
@@ -290,9 +293,9 @@ public void OnReqFrame(ArrayList DataArray)
 		return;
 	}
 	
-	vPos[2] -= 0.5;
+	vPos[2] -= 0.5 * cv_fSpeedMult.FloatValue;
 	TeleportEntity(iBoxEnt, vPos, NULL_VECTOR, NULL_VECTOR);
-	vPos[2] -= 30.0;
+	vPos[2] -= 30.0 * cv_fSpeedMult.FloatValue;
 	TeleportEntity(iParaEnt, vPos, NULL_VECTOR, NULL_VECTOR);
 	
 	RequestFrame(OnReqFrame, DataArray);
